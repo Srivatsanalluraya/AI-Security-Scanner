@@ -1,0 +1,68 @@
+name: "AI-Powered Security Scanner"
+description: "Automatically scans repositories for vulnerabilities, summarizes findings using AI, and posts actionable feedback on pull requests."
+author: "Sri"
+branding:
+  icon: "shield"
+  color: "blue"
+
+inputs:
+  openai_api_key:
+    description: "OpenAI API key for generating AI-based vulnerability summaries."
+    required: true
+  scan_path:
+    description: "Path to the codebase to scan."
+    required: false
+    default: "."
+
+outputs:
+  report-path:
+    description: "Path to the final summarized report."
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    - name: Install Required Tools
+      run: |
+        pip install --upgrade pip
+        pip install safety bandit openai reportlab
+      shell: bash
+
+    - name: Run Dependency Scan
+      run: |
+        mkdir -p reports
+        safety check --full-report > reports/dependency_report.txt || true
+      shell: bash
+
+    - name: Run Static Code Analysis
+      run: |
+        bandit -r ${{ inputs.scan_path }} -f json -o reports/static_report.json || true
+      shell: bash
+
+    - name: Merge Reports
+      run: |
+        python scripts/merge_reports.py
+      shell: bash
+
+    - name: AI Summarization
+      env:
+        OPENAI_API_KEY: ${{ inputs.openai_api_key }}
+      run: |
+        python scripts/ai_summarizer.py
+      shell: bash
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: security-scan-reports
+        path: reports/
+
+outputs:
+  report-path: reports/final_report.json

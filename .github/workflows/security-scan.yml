@@ -1,0 +1,70 @@
+name: Security Scan Workflow
+
+on:
+  push:
+    branches:
+      - main
+      - 'feature/**'
+  pull_request:
+  schedule:
+    - cron: '0 3 * * *'   # Run every day at 3 AM (optional)
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    name: Run Automated Security Scan
+
+    steps:
+      # Step 1: Checkout Repository
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Python Environment
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # Step 3: Install Dependencies for the Scanner Scripts
+      - name: Install Required Tools
+        run: |
+          pip install --upgrade pip
+          pip install safety bandit openai reportlab
+
+      # Step 4: Run Dependency Vulnerability Scan
+      - name: Dependency Scan (Safety)
+        run: |
+          safety check --full-report > reports/dependency_report.txt || true
+
+      # Step 5: Run Static Code Analysis
+      - name: Static Code Analysis (Bandit)
+        run: |
+          bandit -r . -f json -o reports/static_report.json || true
+
+      # Step 6: Merge Reports into Unified JSON
+      - name: Merge Reports
+        run: |
+          python scripts/merge_reports.py
+
+      # Step 7: Generate AI Summary
+      - name: AI Summarization
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          python scripts/ai_summarizer.py
+
+      # Step 8: Upload Full Reports as Workflow Artifacts
+      - name: Upload Scan Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-scan-reports
+          path: reports/
+
+      # Step 9: Post AI Summary as a Comment on Pull Request
+      - name: Comment Summary on PR
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: "🔒 Security Scan Summary"
+          message: |
+            $(cat reports/summary.txt)

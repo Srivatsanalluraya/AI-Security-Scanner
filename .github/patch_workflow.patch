@@ -11,7 +11,7 @@
 +  pull_request:
 +    branches: [ "main", "**" ]
 +  schedule:
-+    - cron: "0 0 * * 0" # Weekly
++    - cron: "0 3 * * *" # Weekly
 +
 +jobs:
 +  security-scan:

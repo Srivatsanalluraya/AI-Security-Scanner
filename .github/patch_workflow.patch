@@ -1,0 +1,72 @@
+*** Begin Patch
+*** Delete File: .github/workflows/security-scan.yml
+*** End Patch
+*** Begin Patch
+*** Add File: .github/workflows/security-scan.yml
++name: AI Security Scan
++
++on:
++  push:
++    branches: [ "main", "**" ]
++  pull_request:
++    branches: [ "main", "**" ]
++  schedule:
++    - cron: "0 0 * * 0" # Weekly
++
++jobs:
++  security-scan:
++    runs-on: ubuntu-latest
++    steps:
++      - name: Checkout repository
++        uses: actions/checkout@v4
++
++      - name: Set up Python
++        uses: actions/setup-python@v5
++        with:
++          python-version: "3.11"
++
++      - name: Install dependencies
++        run: |
++          python -m pip install --upgrade pip
++          pip install -r requirements.txt
++
++      - name: Cache Hugging Face models
++        uses: actions/cache@v3
++        with:
++          path: |
++            ~/.cache/huggingface/transformers
++            ~/.cache/huggingface/hub
++          key: hf-models-${{ runner.os }}-${{ hashFiles('requirements.txt') }}
++
++      - name: Run Static Code Analysis
++        run: |
++          mkdir -p reports
++          bandit -r . -f json -o reports/static_report.json || true
++
++      - name: Run Dependency Scan
++        run: |
++          mkdir -p reports
++          safety check --full-report > reports/dependency_report.txt || true
++
++      - name: Merge Reports
++        run: |
++          python scripts/merge_reports.py
++
++      - name: Generate AI Summary (Hugging Face)
++        run: |
++          python scripts/ai_summarizer.py
++
++      - name: Post results as PR comment (if PR)
++        if: github.event_name == 'pull_request'
++        env:
++          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
++        run: |
++          python scripts/pr_commenter.py
++
++      - name: Upload Reports as Artifacts
++        uses: actions/upload-artifact@v4
++        with:
++          name: security-scan-reports
++          path: reports/
++
+*** End Patch

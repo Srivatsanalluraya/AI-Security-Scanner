@@ -1,14 +1,11 @@
 name: "AI-Powered Security Scanner"
-description: "Automatically scans repositories for vulnerabilities, summarizes findings using Hugging Face AI models, and posts actionable feedback on pull requests."
+description: "Automatically scans repositories for vulnerabilities, merges reports, and summarizes findings using a local Hugging Face model."
 author: "Sri"
 branding:
   icon: "shield"
   color: "blue"
 
 inputs:
-  hf_api_key:
-    description: "Hugging Face API key for generating AI-based vulnerability summaries."
-    required: true
   scan_path:
     description: "Path to the codebase to scan."
     required: false
@@ -32,7 +29,7 @@ runs:
     - name: Install Required Tools
       run: |
         pip install --upgrade pip
-        pip install safety bandit reportlab requests huggingface_hub
+        pip install safety bandit reportlab transformers torch
       shell: bash
 
     - name: Run Dependency Scan
@@ -51,9 +48,7 @@ runs:
         python scripts/merge_reports.py
       shell: bash
 
-    - name: AI Summarization
-      env:
-        HF_API_KEY: ${{ inputs.hf_api_key }}
+    - name: AI Summarization (Hugging Face Local)
       run: |
         python scripts/ai_summarizer.py
       shell: bash
@@ -65,4 +60,4 @@ runs:
         path: reports/
 
 outputs:
-  report-path: reports/final_report.json
+  report-path: reports/summary.txt

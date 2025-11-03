@@ -14,6 +14,7 @@ inputs:
 outputs:
   report-path:
     description: "Path to the final summarized report."
+    value: "reports/summary.txt"
 
 runs:
   using: "composite"
@@ -58,6 +59,3 @@ runs:
       with:
         name: security-scan-reports
         path: reports/
-
-outputs:
-  report-path: reports/summary.txt

@@ -47,7 +47,7 @@ jobs:
 
       - name: Generate AI Summary (Hugging Face)
         run: |
-          python scripts/patch_ai_summarizer.patch
+          python scripts/ai_summarizer.py
 
       - name: Post results as PR comment (if PR)
         if: github.event_name == 'pull_request'

@@ -62,4 +62,3 @@ jobs:
           name: security-scan-reports
           path: reports/
 
-*** End Patch

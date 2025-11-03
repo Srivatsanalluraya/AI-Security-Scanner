@@ -1,13 +1,13 @@
 name: "AI-Powered Security Scanner"
-description: "Automatically scans repositories for vulnerabilities, summarizes findings using AI, and posts actionable feedback on pull requests."
+description: "Automatically scans repositories for vulnerabilities, summarizes findings using Hugging Face AI models, and posts actionable feedback on pull requests."
 author: "Sri"
 branding:
   icon: "shield"
   color: "blue"
 
 inputs:
-  openai_api_key:
-    description: "OpenAI API key for generating AI-based vulnerability summaries."
+  hf_api_key:
+    description: "Hugging Face API key for generating AI-based vulnerability summaries."
     required: true
   scan_path:
     description: "Path to the codebase to scan."
@@ -32,7 +32,7 @@ runs:
     - name: Install Required Tools
       run: |
         pip install --upgrade pip
-        pip install safety bandit openai reportlab
+        pip install safety bandit reportlab requests huggingface_hub
       shell: bash
 
     - name: Run Dependency Scan
@@ -53,7 +53,7 @@ runs:
 
     - name: AI Summarization
       env:
-        OPENAI_API_KEY: ${{ inputs.openai_api_key }}
+        HF_API_KEY: ${{ inputs.hf_api_key }}
       run: |
         python scripts/ai_summarizer.py
       shell: bash
